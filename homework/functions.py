@@ -143,9 +143,9 @@ def save_forecasts(df):
     if not os.path.exists("../files/output"):
         os.makedirs("../files/output")
 
-    columns = [col for col in df.columns if col.startswith("yt_pred")]
+    columns = [col for col in df.columns if col.startswith("yt_pred")] # saca la columna pronostico
 
-    forecasts = df[columns].copy()
+    forecasts = df[columns].copy() 
 
     if os.path.exists("../files/output/forecasts.csv"):
         saved_forecasts = pd.read_csv("../files/output/forecasts.csv", index_col=0)
@@ -173,6 +173,37 @@ def save_metrics(metrics):
         metrics = saved_metrics
 
     metrics.to_csv("../files/output/metrics.csv", index=False)
+
+
+def add_sin_cos_components(df):
+
+    df = df.assign(sin_12m=np.sin(2 * np.pi * df.month / 12)) # seno de 12 meses, se repita cada 12 meses
+    df = df.assign(cos_12m=np.cos(2 * np.pi * df.month / 12)) # coseno de 12 meses
+
+    df = df.assign(sin_6m=np.sin(2 * np.pi * df.month / 6)) # seno de 12 meses, se repita cada 6 meses
+    df = df.assign(cos_6m=np.cos(2 * np.pi * df.month / 6))
+
+    df = df.assign(sin_4m=np.sin(2 * np.pi * df.month / 4)) # seno de 12 meses, se repita cada 4 meses
+    df = df.assign(cos_4m=np.cos(2 * np.pi * df.month / 4))
+
+    df = df.assign(sin_3m=np.sin(2 * np.pi * df.month / 3)) # # seno de 12 meses, se repita cada 3 meses
+    df = df.assign(cos_3m=np.cos(2 * np.pi * df.month / 3))
+
+    return df
+  
+def make_lagged_ts(df, p_max, y_column, fmt="lagged_{}m"):
+    for i in range(1, p_max + 1):
+        df[fmt.format(i)] = df[y_column].shift(i)
+    return df
+  
+def make_yt_true_scaled(df, scaler):
+    df["yt_true_scaled"] = scaler.fit_transform(df[["yt_true"]])
+    return df
+
+def remove_trend_and_cycle(df, yt_true_name="yt_true"):
+    df[yt_true_name + "_d1d12"] = df[yt_true_name].diff(1).diff(12)
+    return df
+
     
 
 
